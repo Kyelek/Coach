@@ -425,6 +425,7 @@ function openSettings(needKey) {
   };
   if (S.apiKey) listFlashModels(S.apiKey).then(fillModels).catch(() => {});
   $('#setModel').addEventListener('change', e => { S.model = e.target.value; save(); toast('Modelo guardado'); });
+  $('#setKey').addEventListener('change', e => { S.apiKey = e.target.value.trim(); save(); });
   $('#btnTestKey').addEventListener('click', async e => {
     S.apiKey = $('#setKey').value.trim(); S.model = ''; save();
     e.target.disabled = true;
@@ -943,4 +944,6 @@ async function sendChat() {
 // Al volver a la app (p. ej. después de medianoche) refresca la vista
 document.addEventListener('visibilitychange', () => { if (!document.hidden && currentTab !== 'coach') render(); });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+// Pide al navegador que no borre los datos de la app cuando le falte espacio
+navigator.storage?.persist?.().catch(() => {});
 go(TITLES[location.hash.slice(1)] ? location.hash.slice(1) : 'hoy');
