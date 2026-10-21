@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1512">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Coach">
+  <title>Mi Coach</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">C</span><span id="topTitle">Mi Coach</span></div>
+    <button class="icon-btn" id="btnSettings" aria-label="Ajustes">⚙️</button>
+  </header>
+
+  <main id="view" class="view"></main>
+
+  <nav class="tabbar" id="tabbar">
+    <button data-tab="hoy" class="active"><span>🏠</span>Hoy</button>
+    <button data-tab="entreno"><span>💪</span>Entreno</button>
+    <button data-tab="menu"><span>🥗</span>Menú</button>
+    <button data-tab="tabaco"><span>🚭</span>Tabaco</button>
+    <button data-tab="trabajo"><span>💼</span>Trabajo</button>
+    <button data-tab="coach"><span>💬</span>Coach</button>
+  </nav>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card" id="modalCard"></div>
+  </div>
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
