@@ -1,5 +1,5 @@
 // Service worker: permite usar la app sin conexión (las funciones de IA sí necesitan internet).
-const CACHE = 'coach-v2';
+const CACHE = 'coach-v3';
 const ASSETS = ['./', 'index.html', 'styles.css', 'app.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

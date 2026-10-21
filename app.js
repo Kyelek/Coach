@@ -320,6 +320,7 @@ function render() {
   view.classList.remove('chat-view');
   document.querySelector('.chat-input')?.remove();
   $('#tabbar').classList.toggle('hidden', !S.profile);
+  $('#btnSettings').classList.toggle('hidden', !S.profile);
   if (!S.profile) return renderOnboarding();
   ({ hoy: renderHoy, entreno: renderEntreno, menu: renderMenu, tabaco: renderTabaco, trabajo: renderTrabajo, coach: renderCoach })[currentTab]();
 }
@@ -363,28 +364,105 @@ function readForm(form) {
   return o;
 }
 
+// Paso del inicio para usuarios nuevos: 'install' (guía de instalación) → 'form' (datos).
+// No se guarda: mientras no haya perfil, cada vez que se abre la app empieza por la guía.
+let onbStep = 'install';
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); installPrompt = e;
+  if (!S.profile && onbStep === 'install') renderOnboarding();
+});
+window.addEventListener('appinstalled', () => { installPrompt = null; toast('¡App instalada! Ábrela desde el icono 📲'); });
+
 function renderOnboarding() {
+  return onbStep === 'install' ? renderInstallGuide() : renderOnboardingForm();
+}
+
+function renderInstallGuide() {
   $('#topTitle').textContent = 'Bienvenido';
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const url = location.origin + location.pathname.replace(/index.html$/, '');
+
+  const android = `
+    <ol class="steps">
+      <li>Abre este enlace en <b>Google Chrome</b> desde tu móvil:<br><span class="url-box">${esc(url)}</span></li>
+      <li>Toca los <b>tres puntitos ⋮</b> que hay <b>arriba a la derecha</b> de la pantalla.</li>
+      <li>En el menú que se abre, toca <b>"Añadir a pantalla de inicio"</b> (en algunos móviles pone <b>"Instalar aplicación"</b>).</li>
+      <li>Te saldrá una ventanita: toca <b>"Instalar"</b> o <b>"Añadir"</b>.</li>
+      <li>Ve a la pantalla de inicio de tu móvil y busca el <b>icono verde "Coach"</b>. Ábrela siempre desde ahí.</li>
+    </ol>`;
+  const ios = `
+    <ol class="steps">
+      <li>Abre este enlace en <b>Safari</b> (el navegador de la brújula 🧭). No funciona desde el navegador de WhatsApp o Instagram:<br><span class="url-box">${esc(url)}</span></li>
+      <li>Toca el botón <b>Compartir</b>: el <b>cuadrado con una flecha hacia arriba ⬆️</b> que está <b>abajo en el centro</b> de la pantalla (en iPad, arriba a la derecha).</li>
+      <li>Desliza el menú hacia arriba y toca <b>"Añadir a pantalla de inicio"</b> ➕.</li>
+      <li>Toca <b>"Añadir"</b> arriba a la derecha.</li>
+      <li>Busca el <b>icono verde "Coach"</b> en tu pantalla de inicio y ábrela siempre desde ahí.</li>
+    </ol>
+    <p class="muted" style="font-size:.85rem">⚠️ En iPhone, la app instalada y Safari guardan los datos por separado. Rellena tus datos <b>después</b> de instalarla, abriéndola desde el icono.</p>`;
+
   view.innerHTML = `
   <div class="card accent">
     <h1>Hola 👋 Soy tu coach</h1>
-    <p>Vamos a cambiar tus hábitos poco a poco: rutina, ejercicio sin gastar, comida sana y barata, dejar el tabaco y encontrar trabajo.</p>
-    <p class="muted">Todo se guarda solo en este móvil.</p>
+    <p>Te voy a ayudar a cambiar tus hábitos poco a poco: rutina, ejercicio sin gastar, comida sana y barata, dejar el tabaco y encontrar trabajo.</p>
+    <p>Antes de empezar, <b>instálame en tu móvil</b> para tenerme a mano como una app más.</p>
   </div>
-  <form id="onb" class="card">${profileForm()}
+
+  ${installed ? `<div class="card accent"><b>✅ Ya estás usando la app instalada.</b> Pulsa "Continuar" para empezar.</div>` : ''}
+  ${installPrompt && !installed ? `<button class="btn block" id="btnInstallNow">📲 Instalar ahora</button>` : ''}
+
+  <div class="card">
+    <h2>📲 Cómo instalarla</h2>
+    <details class="day" ${!isIOS ? 'open' : ''}><summary>🤖 Android (Chrome)</summary>${android}</details>
+    <details class="day" ${isIOS ? 'open' : ''}><summary>🍎 iPhone / iPad (Safari)</summary>${ios}</details>
+  </div>
+
+  <div class="card">
+    <h2>🔒 Tus datos se quedan en tu móvil</h2>
+    <p>Todo lo que apuntes (tu perfil, tu progreso, cigarrillos, menús, candidaturas y conversaciones con el coach) <b>se guarda solo en este móvil</b>, automáticamente. No hace falta crear cuenta y no se sube a ningún servidor.</p>
+    <p class="muted" style="font-size:.9rem">Si borras los datos del navegador, desinstalas la app o cambias de móvil, se perderán. Para tener una copia, usa <b>⚙️ Ajustes → Exportar copia</b> de vez en cuando.</p>
+  </div>
+
+  <button class="btn block" id="btnInstalled">${installed ? 'Continuar →' : 'Ya la tengo instalada, continuar →'}</button>
+  ${installed ? '' : '<button class="btn ghost block mt" id="btnSkipInstall">Continuar sin instalar</button>'}`;
+
+  const next = () => { onbStep = 'form'; renderOnboarding(); window.scrollTo(0, 0); };
+  $('#btnInstalled').addEventListener('click', next);
+  $('#btnSkipInstall')?.addEventListener('click', next);
+  $('#btnInstallNow')?.addEventListener('click', async () => {
+    installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => {});
+    installPrompt = null; renderOnboarding();
+  });
+}
+
+function renderOnboardingForm() {
+  $('#topTitle').textContent = 'Tus datos';
+  view.innerHTML = `
+  <button class="btn ghost" id="btnBackInstall">← Volver a la instalación</button>
+  <div class="card accent">
+    <h1>Cuéntame sobre ti</h1>
+    <p>Con esto preparo tu plan. Lo que escribas se va guardando solo en tu móvil, así que si cierras la app no lo pierdes.</p>
+  </div>
+  <form id="onb" class="card">${profileForm(S.draft || {})}
     <h3 class="mt">🤖 IA gratuita (Google Gemini)</h3>
     <p class="muted">Consigue tu clave gratis en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> → "Create API key". Puedes ponerla ahora o más tarde en ⚙️.</p>
-    <label class="field">Clave de API<input name="apiKey" autocomplete="off" placeholder="AIza..."></label>
+    <label class="field">Clave de API<input name="apiKey" autocomplete="off" placeholder="AIza..." value="${esc(S.draft?.apiKey)}"></label>
     <button class="btn block mt">Empezar mi plan 🚀</button>
   </form>`;
+  $('#btnBackInstall').addEventListener('click', () => { onbStep = 'install'; renderOnboarding(); window.scrollTo(0, 0); });
+  // Autoguardado del borrador mientras se rellena
+  $('#onb').addEventListener('input', e => { S.draft = readForm(e.currentTarget); save(); });
   $('#onb').addEventListener('submit', async e => {
     e.preventDefault();
     const o = readForm(e.target);
     const key = (o.apiKey || '').trim(); delete o.apiKey;
-    S.profile = o; S.startDate = dateKey();
+    S.profile = o; S.startDate = dateKey(); delete S.draft;
     if (key) { S.apiKey = key; detectModel(true); }
     save(); go('hoy');
-    toast('¡Plan creado! Día 1 💪');
+    toast('¡Plan creado y guardado! Día 1 💪');
   });
 }
 
@@ -448,7 +526,7 @@ function openSettings(needKey) {
   });
   $('#btnReset').addEventListener('click', () => {
     if (!confirm('¿Seguro? Se borrará todo tu progreso.')) return;
-    localStorage.removeItem(STORE_KEY); S = defaultState(); closeModal(); render();
+    localStorage.removeItem(STORE_KEY); S = defaultState(); onbStep = 'install'; closeModal(); render();
   });
 }
 

@@ -239,3 +239,10 @@ details.day[open] summary::after { content: "▴"; }
 .hidden { display: none !important; }
 .center { text-align: center; }
 .mt { margin-top: 12px; }
+
+.steps { padding-left: 1.3em; margin: 10px 0; }
+.steps li { margin-bottom: 10px; }
+.url-box {
+  display: inline-block; margin-top: 4px; padding: 4px 8px; border-radius: 8px;
+  background: var(--surface-2); font-family: ui-monospace, monospace; font-size: .85rem; word-break: break-all;
+}
